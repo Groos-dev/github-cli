@@ -2,7 +2,7 @@
 Command-line tool for managing GitHub
 # Install （mac & liunx）
 ```shell
-curl -s https://raw.githubusercontent.com/Groos-dev/github-cli/refs/heads/main/gh-cli-installer.sh | bash
+curl -S https://raw.githubusercontent.com/Groos-dev/github-cli/refs/heads/main/gh-cli-installer.sh | bash
 ```
 # How to use
 ## Create a repo
