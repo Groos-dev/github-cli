@@ -8,10 +8,10 @@ if [ -f "$CORE_FILE" ]; then
     exit 0
 fi
 
-# Download the gh_cli.sh file
-download_result=$(curl -sSL "$BASE_URL" -o "$CORE_FILE" 2>&1)
-if [ $? -ne 0 ]; then
-    echo "Error: $download_result"
+mkdir -p "$(dirname "$CORE_FILE")"
+Download the gh_cli.sh file
+if ! curl -sSL "$BASE_URL" -o "$CORE_FILE"; then
+    echo "Error: Failed to download gh_cli.sh"
     exit 1
 fi
 
