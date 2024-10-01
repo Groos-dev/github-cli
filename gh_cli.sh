@@ -39,6 +39,7 @@ create_token_file() {
 }
 
 read_and_validate_token() {
+    # shellcheck source="$HOME/.gh-cli/account-info"
     source "$ACCOUNT_INFO_FILE"
 
     if [ -z "$github_token" ]; then
@@ -47,6 +48,7 @@ read_and_validate_token() {
         echo "github_token=$github_token" >"$ACCOUNT_INFO_FILE"
         echo -e "${GREEN}Token saved successfully.${NC}"
     fi
+    # shellcheck source="$HOME/.gh-cli/account-info"
     source "$ACCOUNT_INFO_FILE"
 }
 
@@ -117,7 +119,7 @@ function create_repo() {
         # Create local repository and link to remote repository
         git init
         git remote remove origin
-        git remote add origin $(echo "$response" | jq -r '.ssh_url')
+        git remote add origin "$(echo "$response" | jq -r '.ssh_url')" # Quoted to prevent word splitting
         echo "# $repo_name" >README.md
         git add .
         git commit -m "Initial commit"
@@ -205,23 +207,31 @@ delete_repo() {
         fi
     fi
 }
+help() {
+    echo "Usage:"
+    echo "  gh-cli --help                               Display this help message"
+    echo "  gh-cli create <repo_name> [-d <description>] [-s <public|private>]   Create a new repository"
+    echo "    <repo_name>                               Name of the repository to create"
+    echo "    -d <description>                          Optional: Description of the repository"
+    echo "    -s <public|private>                       Optional: Set repository visibility (default: public)"
+    echo "  gh-cli delete <repo_name>                   Delete an existing repository"
+    echo "    <repo_name>                               Name of the repository to delete"
+    echo "  gh-cli update-cli                           Update the gh-cli tool to the latest version"
+}
 
-# Main logic to handle commands
-# Function to handle main logic for commands
 handle_commands() {
-    # Check if any arguments were passed
     if [ $# -eq 0 ]; then
-        echo -e "${RED}Error: No command provided.${NC}"
-        echo "Supported commands: create, delete"
+        echo "${RED} Command error. ${NC}"
+        help
         exit 1
     fi
     case $1 in
     create)
-        REPO_NAME=$2 # Get repository name
-        shift 2      # Move parameters, continue parsing the rest
+        REPO_NAME=$2
+        shift 2
 
         # Initialize description variable as empty
-        REPO_DESC=""
+        REPO_DESC="${REPO_NAME}"
 
         IS_PRIVATE="false"
         # Check if there is a -d parameter
@@ -229,7 +239,7 @@ handle_commands() {
             if [[ -n "$2" ]]; then
                 REPO_DESC="$2" # Get the description content after -d
             else
-                echo -e "${RED}Error: Description is required after -d.${NC}"
+                help
                 exit 1
             fi
 
@@ -241,11 +251,21 @@ handle_commands() {
         ;;
     delete)
         if [ $# -ne 2 ]; then
-            echo -e "${RED}Error: Repository name is required for delete operation.${NC}"
+            help
             exit 1
         fi
         REPO_NAME=$2
         delete_repo "$REPO_NAME"
+        ;;
+    update-cli)
+        if [ $# -ne 2 ]; then
+            if ./update_cli.sh; then
+                echo -e "${GREEN}gh-cli updated successfully.${NC}"
+            else
+                echo -e "${RED}Failed to update gh-cli. Please check the error message above.${NC}"
+                exit 1
+            fi
+        fi
         ;;
     *)
         echo -e "${RED}Error: Unsupported command '$1'.${NC}"
@@ -253,7 +273,7 @@ handle_commands() {
         ;;
     esac
 }
-# Call the function to check dependencies
+# check dependencies
 check_dependencies
-# Call the function to handle commands
+# handle commands
 handle_commands "$@"
