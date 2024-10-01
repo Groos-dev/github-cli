@@ -32,22 +32,22 @@ create_token_file() {
         echo "Token cannot be empty. Please enter your GitHub Personal Access Token:"
         read github_token
     done
-    
+
     mkdir -p "$(dirname "$ACCOUNT_INFO_FILE")"
-    echo "github_token=$github_token" > "$ACCOUNT_INFO_FILE"
+    echo "github_token=$github_token" >"$ACCOUNT_INFO_FILE"
     echo -e "${GREEN}Token saved successfully.${NC}"
 }
 
 read_and_validate_token() {
     source "$ACCOUNT_INFO_FILE"
-    
+
     if [ -z "$github_token" ]; then
         echo -e "${YELLOW}GitHub token is empty. Please enter a new token:${NC}"
         read -s github_token
-        echo "github_token=$github_token" > "$ACCOUNT_INFO_FILE"
+        echo "github_token=$github_token" >"$ACCOUNT_INFO_FILE"
         echo -e "${GREEN}Token saved successfully.${NC}"
     fi
-    source "$ACCOUNT_INFO_FILE" 
+    source "$ACCOUNT_INFO_FILE"
 }
 
 update_github_token() {
@@ -58,7 +58,7 @@ update_github_token() {
     if [ -f "$ACCOUNT_INFO_FILE" ]; then
         sed -i "s/github_token=.*/github_token=$new_token/" "$ACCOUNT_INFO_FILE"
     else
-        echo "github_token=$new_token" > "$ACCOUNT_INFO_FILE"
+        echo "github_token=$new_token" >"$ACCOUNT_INFO_FILE"
     fi
 
     echo -e "${GREEN}github_token updated successfully.${NC}"
@@ -92,6 +92,17 @@ function create_repo() {
     local repo_desc="$2"
     local is_private="${3:-false}"
 
+    # Check if the repository directory already exists
+    if [ ! -d "$repo_name" ]; then
+        echo "Creating directory: $repo_name"
+        mkdir "$repo_name"
+    else
+        echo "Directory $repo_name already exists."
+    fi
+
+    # Change to the repository directory
+    cd "$repo_name" || exit 1
+    echo "Changed working directory to: $(pwd)"
     # Send request to GitHub to create repository
     response=$(curl -s -X POST -H "Authorization: token $github_token" \
         -H "Accept: application/vnd.github.v3+json" \
@@ -102,17 +113,17 @@ function create_repo() {
     if [[ $(echo "$response" | jq -r '.id') != "null" ]]; then
         echo -e "${GREEN}Repository '$repo_name' created successfully.${NC}"
         echo "Repository URL: $(echo "$response" | jq -r '.html_url')"
-        
+
         # Create local repository and link to remote repository
         git init
         git remote remove origin
         git remote add origin $(echo "$response" | jq -r '.ssh_url')
-        echo "# $repo_name" > README.md
+        echo "# $repo_name" >README.md
         git add .
         git commit -m "Initial commit"
         git branch -M main
         git push -u origin main
-        
+
         echo -e "${GREEN}Local repository created and linked to remote repository.${NC}"
     else
         error_message=$(echo "$response" | jq -r '.message')
@@ -129,16 +140,15 @@ function create_repo() {
     fi
 }
 
-
 # Check for required dependencies
 check_dependencies() {
     local missing_deps=()
 
-    if ! command -v git &> /dev/null; then
+    if ! command -v git &>/dev/null; then
         missing_deps+=("git")
     fi
 
-    if ! command -v jq &> /dev/null; then
+    if ! command -v jq &>/dev/null; then
         missing_deps+=("jq")
     fi
 
@@ -155,7 +165,7 @@ check_dependencies() {
 delete_repo() {
     local repo_name="$1"
     echo "Deleting repository: $repo_name"
-    
+
     # Ensure GitHub token is available
     if [ -z "$github_token" ]; then
         get_or_set_token
