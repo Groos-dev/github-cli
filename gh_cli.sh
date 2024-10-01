@@ -258,14 +258,29 @@ handle_commands() {
         delete_repo "$REPO_NAME"
         ;;
     update-cli)
-        if [ $# -ne 2 ]; then
-            if ./update_cli.sh; then
-                echo -e "${GREEN}gh-cli updated successfully.${NC}"
-            else
-                echo -e "${RED}Failed to update gh-cli. Please check the error message above.${NC}"
-                exit 1
-            fi
+        if [ $# -ne 1 ]; then
+            help
+            exit 1
         fi
+        # Define the base URL for the raw GitHub content
+        BASE_URL="https://raw.githubusercontent.com/Groos-dev/github-cli/refs/heads/main/gh_cli.sh"
+        CORE_FILE="$HOME/.gh-cli/bin/gh-cli"
+
+        echo "Updating gh-cli..."
+        download_result=$(curl -sSL "$BASE_URL" -o "$CORE_FILE" 2>&1)
+        if [ $? -ne 0 ]; then
+            echo "${RED}Error: Failed to download the latest version.${NC}"
+            echo "Details: $download_result"
+            exit 1
+        fi
+
+        if [ ! -s "$CORE_FILE" ]; then
+            echo "${RED}Error: Downloaded file is empty. Update aborted.${NC}"
+            exit 1
+        fi
+
+        chmod +x "$CORE_FILE"
+        echo "${GREEN}Successfully updated gh-cli to the latest version.${NC}"
         ;;
     *)
         echo -e "${RED}Error: Unsupported command '$1'.${NC}"
