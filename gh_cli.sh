@@ -280,7 +280,7 @@ handle_commands() {
         fi
 
         chmod +x "$CORE_FILE"
-        echo "${GREEN}Successfully updated gh-cli to the latest version.${NC}"
+        echo -e "${GREEN}Successfully updated gh-cli to the latest version.${NC}"
         ;;
     *)
         echo -e "${RED}Error: Unsupported command '$1'.${NC}"
