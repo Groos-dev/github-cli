@@ -9,7 +9,7 @@ if [ -f "$CORE_FILE" ]; then
 fi
 
 mkdir -p "$(dirname "$CORE_FILE")"
-Download the gh_cli.sh file
+# Download the gh_cli.sh file
 if ! curl -sSL "$BASE_URL" -o "$CORE_FILE"; then
     echo "Error: Failed to download gh_cli.sh"
     exit 1
